@@ -6,6 +6,8 @@ export interface NumerologyMatrixResult {
   matrix: MatrixCell[];
   soulTask?: string;
   familyTask?: string;
+  soulTaskInterpretation?: string;
+  familyTaskInterpretation?: string;
 }
 
 export interface MatrixCell {
@@ -16,6 +18,7 @@ export interface MatrixCell {
     col: number;
   };
   valueKey: string;
+  interpretation?: string;
 }
 
 export interface MatrixInterpretation {

@@ -1,4 +1,4 @@
-use client;
+'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,13 +9,15 @@ import { Loader2, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { MatrixDisplay } from '@/components/numerology/matrix-display';
 import { InterpretationsDisplay } from '@/components/numerology/interpretations-display';
-import { NumerologyMatrixResult, MatrixCell } from '@/types/numerology';
+import { NumerologyMatrixResult } from '@/types/numerology';
 
 export default function NumerologyPage() {
-
+  const [birthDate, setBirthDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NumerologyMatrixResult | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [aiInterpretation, setAIInterpretation] = useState('');
+  const [aiSummary, setAISummary] = useState('');
 
   const handleCalculate = async () => {
     if (!birthDate) {
@@ -53,7 +55,7 @@ export default function NumerologyPage() {
     }
   };
 
-  const handleGenerateAI = async (type: 'full' | 'summary' | 'digit', digit?: number) => {
+  const handleGenerateAIForComponent = async (type: 'full' | 'summary' | 'digit', digit?: number) => {
     if (!result || !birthDate) {
       toast({
         title: 'Ошибка',
@@ -71,15 +73,16 @@ export default function NumerologyPage() {
           birthDate,
           type,
           digit,
+        }),
       });
       if (!response.ok) {
         throw new Error('Failed to generate interpretation');
       }
       const data = await response.json();
       if (type === 'summary') {
-        setAISummary(data.interpretation || '\');
+        setAISummary(data.interpretation || '');
       } else {
-        setAIInterpretation(data.interpretation || '\');
+        setAIInterpretation(data.interpretation || '');
       }
       toast({
         title: 'Успешно',
@@ -109,6 +112,7 @@ export default function NumerologyPage() {
             Расчет психоматрицы и AI-анализ по дате рождения
           </p>
         </div>
+
         {/* Форма ввода */}
         <Card className="mb-8 border-purple-200 dark:border-purple-800">
           <CardHeader>
@@ -141,10 +145,30 @@ export default function NumerologyPage() {
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Расчет...
-                    </>
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Расчет...
+                  </>
+                ) : (
+                  'Рассчитать'
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Результаты */}
+        {result && (
+          <>
+            {/* Дополнительные числа */}
+            <Card className="mb-6 border-pink-200 dark:border-pink-800">
+              <CardHeader>
+                <CardTitle>Дополнительные числа</CardTitle>
+                <CardDescription>Цифры из даты рождения: {result.fullArray.join(', ')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  {result.fullArray.map((num, index) => (
                     <div
                       key={index}
                       className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900 dark:to-purple-900 px-6 py-3 rounded-lg shadow-sm"
@@ -157,10 +181,14 @@ export default function NumerologyPage() {
                 </div>
               </CardContent>
             </Card>
+
             <Separator />
+
             {/* Матрица */}
             <MatrixDisplay matrix={result.matrix} />
+
             <Separator />
+
             {/* Интерпретации */}
             <InterpretationsDisplay
               matrix={result.matrix}
@@ -168,7 +196,7 @@ export default function NumerologyPage() {
               familyTask={result.familyTask}
               soulTaskInterpretation={result.soulTaskInterpretation}
               familyTaskInterpretation={result.familyTaskInterpretation}
-              onGenerateAI={handleGenerateAI}
+              onGenerateAI={handleGenerateAIForComponent}
               isGeneratingAI={loadingAI}
               aiInterpretation={aiInterpretation}
               aiSummary={aiSummary}
@@ -176,6 +204,7 @@ export default function NumerologyPage() {
             />
           </>
         )}
+
         {/* Footer */}
         <footer className="mt-16 text-center text-slate-500 dark:text-slate-400 py-6 border-t border-slate-200 dark:border-slate-800">
           <p className="text-sm">
