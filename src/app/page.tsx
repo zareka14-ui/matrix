@@ -1,4 +1,4 @@
-'use client';
+use client;
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,12 +12,10 @@ import { InterpretationsDisplay } from '@/components/numerology/interpretations-
 import { NumerologyMatrixResult, MatrixCell } from '@/types/numerology';
 
 export default function NumerologyPage() {
-  const [birthDate, setBirthDate] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NumerologyMatrixResult | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [aiInterpretation, setAIInterpretation] = useState('');
-  const [aiSummary, setAISummary] = useState('');
 
   const handleCalculate = async () => {
     if (!birthDate) {
@@ -28,21 +26,16 @@ export default function NumerologyPage() {
       });
       return;
     }
-
     setLoading(true);
-    setAIInterpretation('');
-    setAISummary('');
     try {
       const response = await fetch('/api/numerology/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ birthDate }),
       });
-
       if (!response.ok) {
         throw new Error('Failed to calculate matrix');
       }
-
       const data = await response.json();
       setResult(data);
       toast({
@@ -52,7 +45,6 @@ export default function NumerologyPage() {
     } catch (error) {
       console.error('Error calculating matrix:', error);
       toast({
-        title: 'Ошибка',
         description: 'Не удалось рассчитать матрицу',
         variant: 'destructive',
       });
@@ -70,11 +62,7 @@ export default function NumerologyPage() {
       });
       return;
     }
-
     setLoadingAI(true);
-    setAIInterpretation('');
-    setAISummary('');
-    
     try {
       const response = await fetch('/api/numerology/interpret', {
         method: 'POST',
@@ -83,22 +71,16 @@ export default function NumerologyPage() {
           birthDate,
           type,
           digit,
-          language: 'ru',
-        }),
       });
-
       if (!response.ok) {
-        throw new Error('Failed to generate AI interpretation');
+        throw new Error('Failed to generate interpretation');
       }
-
       const data = await response.json();
-      
       if (type === 'summary') {
-        setAISummary(data.interpretation || '');
+        setAISummary(data.interpretation || '\');
       } else {
-        setAIInterpretation(data.interpretation || '');
+        setAIInterpretation(data.interpretation || '\');
       }
-
       toast({
         title: 'Успешно',
         description: 'AI интерпретация сгенерирована',
@@ -127,7 +109,6 @@ export default function NumerologyPage() {
             Расчет психоматрицы и AI-анализ по дате рождения
           </p>
         </div>
-
         {/* Форма ввода */}
         <Card className="mb-8 border-purple-200 dark:border-purple-800">
           <CardHeader>
@@ -142,7 +123,7 @@ export default function NumerologyPage() {
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor="birthDate" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Дата рождения
                 </label>
                 <Input
@@ -160,31 +141,10 @@ export default function NumerologyPage() {
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Расчет...
-                  </>
-                ) : (
-                  'Рассчитать матрицу'
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Результаты */}
-        {result && (
-          <>
-            <Separator />
-
-            {/* Дополнительные числа */}
-            <Card className="border-pink-200 dark:border-pink-800 mb-8">
-              <CardHeader>
-                <CardTitle>Дополнительные числа</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-3">
-                  {result.additionalNumbers.map((num, index) => (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Расчет...
+                    </>
                     <div
                       key={index}
                       className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900 dark:to-purple-900 px-6 py-3 rounded-lg shadow-sm"
@@ -197,14 +157,10 @@ export default function NumerologyPage() {
                 </div>
               </CardContent>
             </Card>
-
             <Separator />
-
             {/* Матрица */}
             <MatrixDisplay matrix={result.matrix} />
-
             <Separator />
-
             {/* Интерпретации */}
             <InterpretationsDisplay
               matrix={result.matrix}
@@ -220,7 +176,6 @@ export default function NumerologyPage() {
             />
           </>
         )}
-
         {/* Footer */}
         <footer className="mt-16 text-center text-slate-500 dark:text-slate-400 py-6 border-t border-slate-200 dark:border-slate-800">
           <p className="text-sm">
