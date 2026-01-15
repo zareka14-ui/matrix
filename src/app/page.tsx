@@ -1,74 +1,156 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { MatrixDisplay } from '@/components/numerology/matrix-display';
-import { InterpretationsDisplay } from '@/components/numerology/interpretations-display';
-import { Loader2, Calendar } from 'lucide-react';
 
 export default function NumerologyPage() {
   const [birthDate, setBirthDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  const handleCalculate = async () => {
+    if (!birthDate) {
+      setError('Пожалуйста, введите дату рождения');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/numerology/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ birthDate })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to calculate');
+      }
+
+      const data = await response.json();
+      setResult(data);
+    } catch (err) {
+      setError('Ошибка при расчете матрицы');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <h1 className="text-5xl font-bold mb-4 text-center bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #faf5ff, #fdf2f8, #eff6ff)' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
+        <h1 style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '16px', textAlign: 'center', background: 'linear-gradient(to right, #9333ea, #db2777)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: '#9333ea' }}>
           Нумерологический Калькулятор
         </h1>
+        <p style={{ fontSize: '20px', color: '#64748b', textAlign: 'center', marginBottom: '32px' }}>
+          Расчет психоматрицы и AI-анализ по дате рождения
+        </p>
         
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-purple-500" />
-              Введите дату рождения
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-1 w-full">
-                <label className="mb-2 block text-sm font-medium">Дата рождения</label>
-                <input
-                  type="date"
-                  value={birthDate}
-                  onChange={e => setBirthDate(e.target.value)}
-                  className="text-lg h-12 w-full border border-gray-300 rounded-md px-3"
-                />
-              </div>
-              <Button
-                onClick={() => {
-                  setLoading(true);
-                  setTimeout(() => {
-                    setResult({ additionalNumbers: [1, 2, 19, 3, 4] });
-                    setLoading(false);
-                  }, 1000);
-                }}
-                disabled={loading || !birthDate}
-                className="h-12 px-8 bg-gradient-to-r from-purple-600 to-pink-600"
-              >
-                {loading ? 'Расчет...' : 'Рассчитать матрицу'}
-              </Button>
+        <div style={{ background: '#ffffff', borderRadius: '8px', padding: '24px', marginBottom: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>
+            Введите дату рождения
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+                Дата рождения
+              </label>
+              <input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate((e.target as HTMLInputElement).value)}
+                style={{ fontSize: '18px', height: '48px', width: '100%', padding: '0 12px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+              />
             </div>
-          </CardContent>
-        </Card>
+            <button
+              onClick={handleCalculate}
+              disabled={loading || !birthDate}
+              style={{
+                padding: '0 32px',
+                fontSize: '16px',
+                fontWeight: '500',
+                color: '#ffffff',
+                background: loading || !birthDate ? '#9ca3af' : 'linear-gradient(to right, #9333ea, #db2777)',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: loading || !birthDate ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {loading ? 'Расчет...' : 'Рассчитать матрицу'}
+            </button>
+          </div>
+          {error && (
+            <div style={{ color: '#dc2626', padding: '12px', backgroundColor: '#fee2e2', borderRadius: '6px', marginTop: '16px' }}>
+              {error}
+            </div>
+          )}
+        </div>
 
         {result && (
-          <>
-            <MatrixDisplay matrix={[
-              { digit: 1, count: 2, position: { row: 0, col: 0 }, valueKey: '11' },
-              { digit: 2, count: 3, position: { row: 1, col: 0 }, valueKey: '222' },
-              { digit: 3, count: 1, position: { row: 2, col: 0 }, valueKey: '3' },
-              { digit: 4, count: 1, position: { row: 0, col: 1 }, valueKey: '4' },
-              { digit: 5, count: 2, position: { row: 1, col: 1 }, valueKey: '55' },
-              { digit: 6, count: 0, position: { row: 2, col: 1 }, valueKey: '60' },
-              { digit: 7, count: 4, position: { row: 0, col: 2 }, valueKey: '7777' },
-              { digit: 8, count: 1, position: { row: 1, col: 2 }, valueKey: '8' },
-              { digit: 9, count: 1, position: { row: 2, col: 2 }, valueKey: '9' }
-            ]} />
-          </>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>
+              Дополнительные числа
+            </h2>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              {result.additionalNumbers.map((num: number, index: number) => (
+                <div key={index} style={{ background: 'linear-gradient(to bottom right, #faf5ff, #fdf2f8)', padding: '12px 24px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#9333ea' }}>
+                    {num}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>
+              Матрица 3x3
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', background: 'linear-gradient(to bottom right, #faf5ff, #fdf2f8)', padding: '24px', borderRadius: '12px' }}>
+              {result.matrix.map((cell: any) => (
+                <div key={cell.digit} style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#9333ea', marginBottom: '4px' }}>
+                      {cell.count > 0 ? cell.digit : '—'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      {cell.count > 0 ? Array(cell.count).fill(cell.digit).join(' ') : '—'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>
+              Задачи Души и Рода
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+              {result.soulTask && (
+                <div style={{ background: '#faf5ff', padding: '16px', borderRadius: '8px', border: '2px solid #e9d5ff' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>
+                    Личная задача Души
+                  </h3>
+                  <p style={{ fontSize: '14px', marginBottom: '4px' }}>
+                    Число: {result.soulTask}
+                  </p>
+                </div>
+              )}
+              {result.familyTask && (
+                <div style={{ background: '#fdf2f8', padding: '16px', borderRadius: '8px', border: '2px solid #fbcfe8' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>
+                    Родовая задача
+                  </h3>
+                  <p style={{ fontSize: '14px', marginBottom: '4px' }}>
+                    Число: {result.familyTask}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         )}
+        
+        <footer style={{ marginTop: '64px', textAlign: 'center', padding: '24px', borderTop: '1px solid #e5e7eb', color: '#64748b', fontSize: '14px' }}>
+          Нумерологический калькулятор • Создано с помощью Next.js и z-ai-web-dev-sdk
+        </footer>
       </div>
     </div>
   );
