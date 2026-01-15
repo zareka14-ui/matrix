@@ -31,20 +31,18 @@ export async function POST(request: NextRequest) {
     // Проверяем, есть ли API ключ
     if (!ZAI_API_KEY) {
       return NextResponse.json({
-        ...matrixData,
-        matrix: matrixData.matrix.map(cell => ({
-          ...cell,
-          interpretation: 'AI интерпретация требует API ключа'
-        })),
-        note: 'Для AI интерпретации настройте ZAI_API_KEY в Vercel Settings'
+        interpretation: 'AI интерпретация требует API ключа. Пожалуйста, настройте ZAI_API_KEY в Vercel Settings.',
+        type,
+        error: 'ZAI_API_KEY not configured'
       });
     }
 
     // Импортируем z-ai-web-dev-sdk динамически
-    const ZAI = require('z-ai-web-dev-sdk');
+    const ZAI = await import('z-ai-web-dev-sdk') as any;
 
-    // Инициализируем SDK
-    const zai = await ZAI.create();
+    // Инициализируем SDK с API ключом
+    const zai = ZAI.create({ apiKey: ZAI_API_KEY });
+
     const systemPrompt = 'Ты - эксперт по нумерологии. Дай подробную интерпретацию.';
     const userPrompt = `Проанализируй нумерологическую матрицу:
 Дата рождения: ${birthDate}
@@ -54,10 +52,10 @@ export async function POST(request: NextRequest) {
 Родовая задача: ${matrixData.familyTask}
 
 Матрица цифр:
- ${matrixData.matrix.map(cell => `Цифра ${cell.digit}: ${cell.count} шт. (${cell.valueKey})`).join('\n')}
+${matrixData.matrix.map(cell => `Цифра ${cell.digit}: ${cell.count} шт. (${cell.valueKey})`).join('\n')}
 
- ${type === 'full' ? 'Дай полную интерпретацию всей матрицы.' : 
-type === 'digit' ? `Проанализируй цифру ${digit} в контексте матрицы.` : 
+${type === 'full' ? 'Дай полную интерпретацию всей матрицы.' :
+type === 'digit' ? `Проанализируй цифру ${digit} в контексте матрицы.` :
 'Дай краткий обзор (summary) ключевых особенностей.'}`;
 
     const completion = await zai.chat.completions.create({
@@ -82,10 +80,18 @@ type === 'digit' ? `Проанализируй цифру ${digit} в конте
         familyTask: matrixData.familyTask
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating AI interpretation:', error);
+
+    // Проверяем, есть ли сообщение об ошибке
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+
     return NextResponse.json(
-      { error: 'Failed to generate interpretation' },
+      {
+        error: 'Failed to generate interpretation',
+        details: errorMessage,
+        note: !ZAI_API_KEY ? 'Для AI интерпретации настройте ZAI_API_KEY в Vercel Settings' : undefined
+      },
       { status: 500 }
     );
   }
