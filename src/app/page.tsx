@@ -4,11 +4,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, Sparkles } from 'lucide-react';
+import { Loader2, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { MatrixDisplay } from '@/components/numerology/matrix-display';
 import { InterpretationsDisplay } from '@/components/numerology/interpretations-display';
@@ -33,6 +30,8 @@ export default function NumerologyPage() {
     }
 
     setLoading(true);
+    setAIInterpretation('');
+    setAISummary('');
     try {
       const response = await fetch('/api/numerology/calculate', {
         method: 'POST',
@@ -46,8 +45,6 @@ export default function NumerologyPage() {
 
       const data = await response.json();
       setResult(data);
-      setAIInterpretation('');
-      setAISummary('');
       toast({
         title: 'Успешно',
         description: 'Матрица рассчитана',
@@ -64,7 +61,7 @@ export default function NumerologyPage() {
     }
   };
 
-  const handleGenerateAI = async (type: 'full' | 'summary' | 'digit' = 'full', digit?: number) => {
+  const handleGenerateAI = async (type: 'full' | 'summary' | 'digit', digit?: number) => {
     if (!result || !birthDate) {
       toast({
         title: 'Ошибка',
@@ -75,6 +72,9 @@ export default function NumerologyPage() {
     }
 
     setLoadingAI(true);
+    setAIInterpretation('');
+    setAISummary('');
+    
     try {
       const response = await fetch('/api/numerology/interpret', {
         method: 'POST',
@@ -94,9 +94,9 @@ export default function NumerologyPage() {
       const data = await response.json();
       
       if (type === 'summary') {
-        setAISummary(data.interpretation);
+        setAISummary(data.interpretation || '');
       } else {
-        setAIInterpretation(data.interpretation);
+        setAIInterpretation(data.interpretation || '');
       }
 
       toast({
@@ -142,9 +142,9 @@ export default function NumerologyPage() {
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
-                <Label htmlFor="birthDate" className="mb-2 block">
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Дата рождения
-                </Label>
+                </label>
                 <Input
                   id="birthDate"
                   type="date"
@@ -174,9 +174,11 @@ export default function NumerologyPage() {
 
         {/* Результаты */}
         {result && (
-          <div className="space-y-8">
+          <>
+            <Separator />
+
             {/* Дополнительные числа */}
-            <Card className="border-pink-200 dark:border-pink-800">
+            <Card className="border-pink-200 dark:border-pink-800 mb-8">
               <CardHeader>
                 <CardTitle>Дополнительные числа</CardTitle>
               </CardHeader>
@@ -185,7 +187,7 @@ export default function NumerologyPage() {
                   {result.additionalNumbers.map((num, index) => (
                     <div
                       key={index}
-                      className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900 dark:to-purple-900 px-6 py-3 rounded-lg"
+                      className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900 dark:to-purple-900 px-6 py-3 rounded-lg shadow-sm"
                     >
                       <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                         {num}
@@ -214,8 +216,9 @@ export default function NumerologyPage() {
               isGeneratingAI={loadingAI}
               aiInterpretation={aiInterpretation}
               aiSummary={aiSummary}
+              showAI={true}
             />
-          </div>
+          </>
         )}
 
         {/* Footer */}
