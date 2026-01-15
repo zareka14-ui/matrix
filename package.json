@@ -13,17 +13,22 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "lucide-react": "^0.400.0",
-    "z-ai-web-dev-sdk": "latest"
+    "z-ai-web-dev-sdk": "latest",
+    "moment": "^2.29.4",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.5.0",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.11.24",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
-    "typescript": "^5.6.0",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^15.0.0",
-    "tailwindcss": "^3.4.0",
-    "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0"
+    "typescript": "^5.6.2",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^15.0.1",
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8.4.35",
+    "autoprefixer": "^10.4.16"
   }
 }

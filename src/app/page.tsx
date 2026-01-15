@@ -1,155 +1,229 @@
 'use client';
 
 import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Calendar, Sparkles } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { MatrixDisplay } from '@/components/numerology/matrix-display';
+import { InterpretationsDisplay } from '@/components/numerology/interpretations-display';
+import { NumerologyMatrixResult, MatrixCell } from '@/types/numerology';
 
 export default function NumerologyPage() {
   const [birthDate, setBirthDate] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState('');
+  const [result, setResult] = useState<NumerologyMatrixResult | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiInterpretation, setAIInterpretation] = useState('');
+  const [aiSummary, setAISummary] = useState('');
 
   const handleCalculate = async () => {
     if (!birthDate) {
-      setError('Пожалуйста, введите дату рождения');
+      toast({
+        title: 'Ошибка',
+        description: 'Пожалуйста, введите дату рождения',
+        variant: 'destructive',
+      });
       return;
     }
 
     setLoading(true);
-    setError('');
     try {
       const response = await fetch('/api/numerology/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ birthDate })
+        body: JSON.stringify({ birthDate }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to calculate');
+        throw new Error('Failed to calculate matrix');
       }
 
       const data = await response.json();
       setResult(data);
-    } catch (err) {
-      setError('Ошибка при расчете матрицы');
-      console.error(err);
+      setAIInterpretation('');
+      setAISummary('');
+      toast({
+        title: 'Успешно',
+        description: 'Матрица рассчитана',
+      });
+    } catch (error) {
+      console.error('Error calculating matrix:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось рассчитать матрицу',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGenerateAI = async (type: 'full' | 'summary' | 'digit' = 'full', digit?: number) => {
+    if (!result || !birthDate) {
+      toast({
+        title: 'Ошибка',
+        description: 'Сначала рассчитайте матрицу',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoadingAI(true);
+    try {
+      const response = await fetch('/api/numerology/interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          birthDate,
+          type,
+          digit,
+          language: 'ru',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate AI interpretation');
+      }
+
+      const data = await response.json();
+      
+      if (type === 'summary') {
+        setAISummary(data.interpretation);
+      } else {
+        setAIInterpretation(data.interpretation);
+      }
+
+      toast({
+        title: 'Успешно',
+        description: 'AI интерпретация сгенерирована',
+      });
+    } catch (error) {
+      console.error('Error generating AI interpretation:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось сгенерировать AI интерпретацию',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #faf5ff, #fdf2f8, #eff6ff)' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
-        <h1 style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '16px', textAlign: 'center', background: 'linear-gradient(to right, #9333ea, #db2777)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: '#9333ea' }}>
-          Нумерологический Калькулятор
-        </h1>
-        <p style={{ fontSize: '20px', color: '#64748b', textAlign: 'center', marginBottom: '32px' }}>
-          Расчет психоматрицы и AI-анализ по дате рождения
-        </p>
-        
-        <div style={{ background: '#ffffff', borderRadius: '8px', padding: '24px', marginBottom: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>
-            Введите дату рождения
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
-                Дата рождения
-              </label>
-              <input
-                type="date"
-                value={birthDate}
-                onChange={(e) => setBirthDate((e.target as HTMLInputElement).value)}
-                style={{ fontSize: '18px', height: '48px', width: '100%', padding: '0 12px', border: '1px solid #d1d5db', borderRadius: '6px' }}
-              />
-            </div>
-            <button
-              onClick={handleCalculate}
-              disabled={loading || !birthDate}
-              style={{
-                padding: '0 32px',
-                fontSize: '16px',
-                fontWeight: '500',
-                color: '#ffffff',
-                background: loading || !birthDate ? '#9ca3af' : 'linear-gradient(to right, #9333ea, #db2777)',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: loading || !birthDate ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ? 'Расчет...' : 'Рассчитать матрицу'}
-            </button>
-          </div>
-          {error && (
-            <div style={{ color: '#dc2626', padding: '12px', backgroundColor: '#fee2e2', borderRadius: '6px', marginTop: '16px' }}>
-              {error}
-            </div>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Нумерологический Калькулятор
+          </h1>
+          <p className="text-xl text-slate-600 dark:text-slate-400">
+            Расчет психоматрицы и AI-анализ по дате рождения
+          </p>
         </div>
 
+        {/* Форма ввода */}
+        <Card className="mb-8 border-purple-200 dark:border-purple-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-purple-500" />
+              Введите дату рождения
+            </CardTitle>
+            <CardDescription>
+              Выберите дату рождения для расчета психоматрицы
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-1 w-full">
+                <Label htmlFor="birthDate" className="mb-2 block">
+                  Дата рождения
+                </Label>
+                <Input
+                  id="birthDate"
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate((e.target as HTMLInputElement).value)}
+                  className="text-lg h-12"
+                />
+              </div>
+              <Button
+                onClick={handleCalculate}
+                disabled={loading || !birthDate}
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Расчет...
+                  </>
+                ) : (
+                  'Рассчитать матрицу'
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Результаты */}
         {result && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>
-              Дополнительные числа
-            </h2>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              {result.additionalNumbers.map((num: number, index: number) => (
-                <div key={index} style={{ background: 'linear-gradient(to bottom right, #faf5ff, #fdf2f8)', padding: '12px 24px', borderRadius: '8px' }}>
-                  <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#9333ea' }}>
-                    {num}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>
-              Матрица 3x3
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', background: 'linear-gradient(to bottom right, #faf5ff, #fdf2f8)', padding: '24px', borderRadius: '12px' }}>
-              {result.matrix.map((cell: any) => (
-                <div key={cell.digit} style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#9333ea', marginBottom: '4px' }}>
-                      {cell.count > 0 ? cell.digit : '—'}
+          <div className="space-y-8">
+            {/* Дополнительные числа */}
+            <Card className="border-pink-200 dark:border-pink-800">
+              <CardHeader>
+                <CardTitle>Дополнительные числа</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  {result.additionalNumbers.map((num, index) => (
+                    <div
+                      key={index}
+                      className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900 dark:to-purple-900 px-6 py-3 rounded-lg"
+                    >
+                      <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        {num}
+                      </span>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {cell.count > 0 ? Array(cell.count).fill(cell.digit).join(' ') : '—'}
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </CardContent>
+            </Card>
 
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>
-              Задачи Души и Рода
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-              {result.soulTask && (
-                <div style={{ background: '#faf5ff', padding: '16px', borderRadius: '8px', border: '2px solid #e9d5ff' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>
-                    Личная задача Души
-                  </h3>
-                  <p style={{ fontSize: '14px', marginBottom: '4px' }}>
-                    Число: {result.soulTask}
-                  </p>
-                </div>
-              )}
-              {result.familyTask && (
-                <div style={{ background: '#fdf2f8', padding: '16px', borderRadius: '8px', border: '2px solid #fbcfe8' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>
-                    Родовая задача
-                  </h3>
-                  <p style={{ fontSize: '14px', marginBottom: '4px' }}>
-                    Число: {result.familyTask}
-                  </p>
-                </div>
-              )}
-            </div>
+            <Separator />
+
+            {/* Матрица */}
+            <MatrixDisplay matrix={result.matrix} />
+
+            <Separator />
+
+            {/* Интерпретации */}
+            <InterpretationsDisplay
+              matrix={result.matrix}
+              soulTask={result.soulTask}
+              familyTask={result.familyTask}
+              soulTaskInterpretation={result.soulTaskInterpretation}
+              familyTaskInterpretation={result.familyTaskInterpretation}
+              onGenerateAI={handleGenerateAI}
+              isGeneratingAI={loadingAI}
+              aiInterpretation={aiInterpretation}
+              aiSummary={aiSummary}
+            />
           </div>
         )}
-        
-        <footer style={{ marginTop: '64px', textAlign: 'center', padding: '24px', borderTop: '1px solid #e5e7eb', color: '#64748b', fontSize: '14px' }}>
-          Нумерологический калькулятор • Создано с помощью Next.js и z-ai-web-dev-sdk
+
+        {/* Footer */}
+        <footer className="mt-16 text-center text-slate-500 dark:text-slate-400 py-6 border-t border-slate-200 dark:border-slate-800">
+          <p className="text-sm">
+            Нумерологический калькулятор с AI-анализом • Создано с помощью
+            Next.js и z-ai-web-dev-sdk
+          </p>
         </footer>
       </div>
     </div>
